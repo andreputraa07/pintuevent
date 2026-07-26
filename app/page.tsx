@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-html-link-for-pages */
 
 import Image from "next/image";
 import {
@@ -169,12 +170,12 @@ export default function Home() {
             <a href="#bantuan">Bantuan</a>
           </nav>
           <div className="nav-actions">
-            <button className="btn btn-ghost" onClick={() => setNotice("Fitur masuk akan segera tersedia.")}>
+            <a className="btn btn-ghost" href="/login">
               Masuk
-            </button>
-            <button className="btn btn-primary" onClick={() => setNotice("Pendaftaran segera dibuka.")}>
+            </a>
+            <a className="btn btn-primary" href="/login">
               Daftar
-            </button>
+            </a>
           </div>
           <button
             className="menu-button"
@@ -193,8 +194,8 @@ export default function Home() {
               </a>
             ))}
             <div className="mobile-actions">
-              <button className="btn btn-ghost">Masuk</button>
-              <button className="btn btn-primary">Daftar Gratis</button>
+              <a className="btn btn-ghost" href="/login">Masuk</a>
+              <a className="btn btn-primary" href="/login">Daftar Gratis</a>
             </div>
           </nav>
         )}
@@ -308,7 +309,7 @@ export default function Home() {
                     <p><MapPin size={16} /> {event.location}</p>
                     <div className="event-footer">
                       <div><small>Mulai dari</small><strong>{event.price}</strong></div>
-                      <button aria-label={`Lihat ${event.title}`}><ArrowRight size={19} /></button>
+                      <a aria-label={`Beli tiket ${event.title}`} href={`/checkout/${event.title.toLowerCase().replaceAll(" ", "-").replaceAll("2026", "2026")}`}><ArrowRight size={19} /></a>
                     </div>
                   </div>
                 </article>
@@ -365,7 +366,7 @@ export default function Home() {
       <nav className="mobile-bottom-nav" aria-label="Navigasi bawah">
         <a className="active" href="#beranda"><Sparkles /><span>Beranda</span></a>
         <a href="#event-pilihan"><Search /><span>Jelajahi</span></a>
-        <a href="#event-pilihan"><Ticket /><span>Tiket Saya</span></a>
+        <a href="/dashboard/tickets"><Ticket /><span>Tiket Saya</span></a>
         <a href="#buat-event"><Users /><span>Buat Event</span></a>
       </nav>
 
