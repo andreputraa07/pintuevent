@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-html-link-for-pages */
 import Image from "next/image";
-import { BarChart3, CalendarDays, CircleDollarSign, LayoutDashboard, LogOut, ScanLine, Settings, ShieldCheck, Ticket, Users } from "lucide-react";
+import { BarChart3, CalendarDays, CircleDollarSign, LayoutDashboard, LogOut, Menu, ScanLine, Settings, ShieldCheck, Ticket, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { authorizeSession, getAccessSession, signOut } from "@/src/services/authorization";
 
@@ -19,7 +19,7 @@ const configs = {
 } as const;
 
 export default function OperationsDashboard({ role, segments=[] }: { role:keyof typeof configs; segments?:string[] }) {
-  const cfg=configs[role]; const [ready,setReady]=useState(false); const section=segments.join("/")||"";
+  const cfg=configs[role]; const [ready,setReady]=useState(false); const [open,setOpen]=useState(false); const section=segments.join("/")||"";
   useEffect(() => {
     getAccessSession().then((session) => {
       const access=authorizeSession(session,role);
@@ -31,11 +31,12 @@ export default function OperationsDashboard({ role, segments=[] }: { role:keyof 
   }, [role]);
   if(!ready) return <div className="loading-portal"><p>Memeriksa akses {role}...</p></div>;
   return <div className="portal-shell">
-    <aside className="portal-sidebar"><a className="portal-brand" href="/"><Image src="/pintuevent-favicon.png" alt="" width={38} height={38}/>PintuEvent</a>
-      <nav>{cfg.menu.map(([label,path,Icon])=><a className={section===path?"active":""} href={`${cfg.base}/${path}`} key={label}><Icon/>{label}</a>)}</nav>
+    <aside className={`portal-sidebar ${open?"open":""}`}><a className="portal-brand" href="/"><Image src="/pintuevent-favicon.png" alt="" width={38} height={38}/>PintuEvent</a>
+      <button className="portal-close" aria-label="Tutup navigasi" onClick={()=>setOpen(false)}><X/></button>
+      <nav>{cfg.menu.map(([label,path,Icon])=><a className={section===path?"active":""} href={`${cfg.base}/${path}`} key={label} onClick={()=>setOpen(false)}><Icon/>{label}</a>)}</nav>
       <button className="portal-logout" onClick={async()=>{await signOut();location.href="/"}}><LogOut/>Keluar</button>
     </aside>
-    <div className="portal-main"><header className="portal-header"><div><small>{role}</small><strong>{role==="admin"?"Platform Admin":"PintuEvent Studio"}</strong></div><span className="portal-avatar">{role==="admin"?"AD":"OR"}</span></header>
+    <div className="portal-main"><header className="portal-header"><button aria-label="Buka navigasi" onClick={()=>setOpen(true)}><Menu/></button><div><small>{role}</small><strong>{role==="admin"?"Platform Admin":"PintuEvent Studio"}</strong></div><span className="portal-avatar">{role==="admin"?"AD":"OR"}</span></header>
       <div className="demo-banner"><strong>Mode demo</strong> · Operasi sensitif aktif setelah Supabase dan RLS diterapkan.</div>
       <main className="portal-content"><div className="portal-title"><small>{role}</small><h1>{section?titleCase(section):cfg.title}</h1><p>Data operasional dan navigasi berbasis permission.</p></div>
         <div className="portal-stats">{cfg.stats.map(([label,value])=><article key={label}><BarChart3/><span>{label}</span><strong>{value}</strong></article>)}</div>

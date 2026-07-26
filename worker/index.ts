@@ -29,6 +29,24 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    if (
+      url.pathname.startsWith("/assets/") ||
+      url.pathname === "/pintuevent-favicon.png"
+    ) {
+      const response = await env.ASSETS.fetch(request);
+      if (!response.ok) return response;
+      const headers = new Headers(response.headers);
+      headers.set(
+        "Cache-Control",
+        "public, max-age=86400, stale-while-revalidate=604800",
+      );
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    }
+
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {

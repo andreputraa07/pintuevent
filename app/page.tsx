@@ -22,7 +22,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useDeferredValue, useMemo, useState } from "react";
 
 type EventItem = {
   id: number;
@@ -51,7 +51,7 @@ const events: EventItem[] = [
     date: "Sab, 22 Agustus · 19.00",
     location: "Istora Senayan, Jakarta",
     price: "Rp250.000",
-    image: "/assets/hero-concert.png",
+    image: "/assets/hero-concert.webp",
     tag: "Paling diminati",
   },
   {
@@ -61,7 +61,7 @@ const events: EventItem[] = [
     date: "28–30 Agustus · 10.00",
     location: "GBK City Park, Jakarta",
     price: "Rp125.000",
-    image: "/assets/festival.png",
+    image: "/assets/festival.webp",
     tag: "Early bird",
   },
   {
@@ -71,7 +71,7 @@ const events: EventItem[] = [
     date: "Min, 6 September · 10.00",
     location: "Art Space Kemang, Jakarta",
     price: "Rp350.000",
-    image: "/assets/workshop.png",
+    image: "/assets/workshop.webp",
     tag: "Sisa 12 tiket",
   },
   {
@@ -81,7 +81,7 @@ const events: EventItem[] = [
     date: "Sab, 12 September · 09.00",
     location: "Sudirman Grand Ballroom",
     price: "Gratis",
-    image: "/assets/festival.png",
+    image: "/assets/festival.webp",
     tag: "Gratis",
   },
   {
@@ -91,7 +91,7 @@ const events: EventItem[] = [
     date: "19–20 September · 08.30",
     location: "ICE BSD, Tangerang",
     price: "Rp475.000",
-    image: "/assets/workshop.png",
+    image: "/assets/workshop.webp",
   },
   {
     id: 6,
@@ -100,7 +100,7 @@ const events: EventItem[] = [
     date: "Min, 27 September · 05.30",
     location: "Tugu Pahlawan, Surabaya",
     price: "Rp150.000",
-    image: "/assets/festival.png",
+    image: "/assets/festival.webp",
   },
 ];
 
@@ -122,10 +122,12 @@ export default function Home() {
   const [location, setLocation] = useState("");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [notice, setNotice] = useState("");
+  const deferredQuery = useDeferredValue(query);
+  const deferredLocation = useDeferredValue(location);
 
   const visibleEvents = useMemo(() => {
-    const normalizedQuery = query.toLowerCase().trim();
-    const normalizedLocation = location.toLowerCase().trim();
+    const normalizedQuery = deferredQuery.toLowerCase().trim();
+    const normalizedLocation = deferredLocation.toLowerCase().trim();
     return events.filter((event) => {
       const matchesCategory =
         activeCategory === "Semua" || event.category === activeCategory;
@@ -137,7 +139,7 @@ export default function Home() {
         event.location.toLowerCase().includes(normalizedLocation);
       return matchesCategory && matchesQuery && matchesLocation;
     });
-  }, [activeCategory, location, query]);
+  }, [activeCategory, deferredLocation, deferredQuery]);
 
   function searchEvents(event: FormEvent) {
     event.preventDefault();
@@ -238,12 +240,12 @@ export default function Home() {
           </div>
           <div className="hero-visual" aria-label="Suasana event pilihan PintuEvent">
             <div className="main-photo">
-              <Image src="/assets/hero-concert.png" alt="Penonton menikmati konser dengan pencahayaan ungu" fill priority unoptimized sizes="(max-width: 900px) 100vw, 46vw" />
+              <Image src="/assets/hero-concert.webp" alt="Penonton menikmati konser dengan pencahayaan ungu" fill priority unoptimized sizes="(max-width: 900px) 100vw, 46vw" />
               <div className="photo-badge"><Ticket size={17} /> 2.000+ event aktif</div>
             </div>
             <div className="side-photos">
-              <div><Image src="/assets/festival.png" alt="Teman-teman menikmati festival luar ruang" fill unoptimized sizes="20vw" /></div>
-              <div><Image src="/assets/workshop.png" alt="Peserta mengikuti workshop kreatif" fill unoptimized sizes="20vw" /></div>
+              <div><Image src="/assets/festival.webp" alt="Teman-teman menikmati festival luar ruang" fill unoptimized sizes="(max-width: 900px) 45vw, 20vw" /></div>
+              <div><Image src="/assets/workshop.webp" alt="Peserta mengikuti workshop kreatif" fill unoptimized sizes="(max-width: 900px) 45vw, 20vw" /></div>
             </div>
           </div>
         </div>

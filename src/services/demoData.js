@@ -1,7 +1,7 @@
 export const demoEvents = [
-  { id: "evt-1", slug: "jakarta-music-festival-2026", title: "Jakarta Music Festival 2026", category: "Musik", city: "Jakarta", date: "22 Agustus 2026 · 19.00", location: "Istora Senayan", price: 250000, quota: 1200, sold: 834, image: "/assets/hero-concert.png", status: "published" },
-  { id: "evt-2", slug: "festival-kreatif-nusantara", title: "Festival Kreatif Nusantara", category: "Seni & Budaya", city: "Jakarta", date: "28 Agustus 2026 · 10.00", location: "GBK City Park", price: 125000, quota: 800, sold: 490, image: "/assets/festival.png", status: "published" },
-  { id: "evt-3", slug: "workshop-melukis-kanvas", title: "Workshop Melukis di Atas Kanvas", category: "Workshop", city: "Jakarta", date: "6 September 2026 · 10.00", location: "Art Space Kemang", price: 350000, quota: 40, sold: 28, image: "/assets/workshop.png", status: "published" },
+  { id: "evt-1", slug: "jakarta-music-festival-2026", title: "Jakarta Music Festival 2026", category: "Musik", city: "Jakarta", date: "22 Agustus 2026 · 19.00", location: "Istora Senayan", price: 250000, quota: 1200, sold: 834, image: "/assets/hero-concert.webp", status: "published" },
+  { id: "evt-2", slug: "festival-kreatif-nusantara", title: "Festival Kreatif Nusantara", category: "Seni & Budaya", city: "Jakarta", date: "28 Agustus 2026 · 10.00", location: "GBK City Park", price: 125000, quota: 800, sold: 490, image: "/assets/festival.webp", status: "published" },
+  { id: "evt-3", slug: "workshop-melukis-kanvas", title: "Workshop Melukis di Atas Kanvas", category: "Workshop", city: "Jakarta", date: "6 September 2026 · 10.00", location: "Art Space Kemang", price: 350000, quota: 40, sold: 28, image: "/assets/workshop.webp", status: "published" },
 ];
 
 export const demoOrders = [

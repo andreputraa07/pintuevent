@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-html-link-for-pages */
 
 import Image from "next/image";
-import QRCode from "react-qr-code";
+import dynamic from "next/dynamic";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -14,6 +14,10 @@ import { ReactNode, useEffect, useState } from "react";
 import { getCustomerSnapshot } from "@/src/services/customerService";
 import { validateAvatar } from "@/src/services/profileService";
 import { authorizeSession, getAccessSession, signOut } from "@/src/services/authorization";
+
+const QRCode = dynamic(() => import("react-qr-code"), {
+  loading: () => <LoadingSkeleton label="Menyiapkan QR tiket..." />,
+});
 
 type Snapshot = Awaited<ReturnType<typeof getCustomerSnapshot>>;
 type View = "overview" | "tickets" | "ticket" | "orders" | "order" | "favorites" | "vouchers" | "notifications" | "profile" | "settings" | "checkout" | "payment" | "payment-success";
@@ -133,7 +137,7 @@ function TicketDetail({ ticket }: { ticket: any }) {
 function OrdersPage({ data }: { data: Snapshot }) { return <><PageTitle eyebrow="Pesanan Saya" title="Riwayat transaksi" description="Status pembayaran dan tiket dari akunmu." /><div className="portal-list">{data.orders.map((order: any) => <OrderCard key={order.id} order={order} />)}</div></>; }
 function OrderCard({ order }: { order: any }) { return <article className="portal-panel order-row"><div><small>{order.number}</small><h3>{order.event.title}</h3><p>{order.createdAt} · {order.quantity} tiket</p></div><div><StatusBadge status={order.status} /><strong>{formatCurrency(order.total)}</strong><a href={`/dashboard/orders/${order.id}`}>Detail</a></div></article>; }
 function OrderDetail({ order }: { order: any }) { return <><PageTitle eyebrow={order.number} title={order.event.title} description="Rincian pesanan dan pembayaran." /><section className="portal-panel summary-lines"><p><span>Status</span><StatusBadge status={order.status} /></p><p><span>Metode</span><strong>{order.payment}</strong></p><p><span>Jumlah tiket</span><strong>{order.quantity}</strong></p><p className="total"><span>Total</span><strong>{formatCurrency(order.total)}</strong></p>{order.status === "pending" && <a className="portal-button" href={`/payment/${order.id}`}>Bayar sekarang</a>}</section></>; }
-function EventCards({ events, favorite = false }: { events: any[]; favorite?: boolean }) { return events.length ? <div className="portal-grid">{events.map((event) => <article className="portal-card" key={event.id}><div className="card-image"><Image src={event.image} alt="" fill /><button className="favorite-mini" aria-label="Favorit"><Heart fill={favorite ? "currentColor" : "none"} /></button></div><div><small>{event.category}</small><h3>{event.title}</h3><p><CalendarDays />{event.date}</p><p><MapPin />{event.city}</p><strong>{formatCurrency(event.price)}</strong><a className="portal-button" href={`/checkout/${event.slug}`}>Beli tiket</a></div></article>)}</div> : <EmptyState title="Belum ada event" />; }
+function EventCards({ events, favorite = false }: { events: any[]; favorite?: boolean }) { return events.length ? <div className="portal-grid">{events.map((event) => <article className="portal-card" key={event.id}><div className="card-image"><Image src={event.image} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw" /><button className="favorite-mini" aria-label="Favorit"><Heart fill={favorite ? "currentColor" : "none"} /></button></div><div><small>{event.category}</small><h3>{event.title}</h3><p><CalendarDays />{event.date}</p><p><MapPin />{event.city}</p><strong>{formatCurrency(event.price)}</strong><a className="portal-button" href={`/checkout/${event.slug}`}>Beli tiket</a></div></article>)}</div> : <EmptyState title="Belum ada event" />; }
 function VoucherPage({ vouchers }: { vouchers: any[] }) { return <><PageTitle eyebrow="Voucher Saya" title="Hemat di event favorit" description="Voucher aktif dan riwayat penggunaan." /><div className="portal-grid">{vouchers.map((v) => <article className="voucher-card" key={v.id}><Tag /><small>Diskon hingga</small><strong>{v.value}%</strong><code>{v.code}</code><p>Min. {formatCurrency(v.minimum)} · s.d. {v.validUntil}</p></article>)}</div></>; }
 function NotificationPage({ notifications }: { notifications: any[] }) { const [items, setItems] = useState(notifications); return <><PageTitle eyebrow="Notifikasi" title="Kabar terbaru" description="Pembaruan transaksi dan event." /><button className="text-button" onClick={() => setItems(items.map((x) => ({ ...x, read: true })))}>Tandai semua dibaca</button><div className="portal-list">{items.map((n) => <article key={n.id} className={`notification-item ${n.read ? "" : "unread"}`}><Bell /><div><h3>{n.title}</h3><p>{n.body}</p><small>{n.createdAt}</small></div></article>)}</div></>; }
 
