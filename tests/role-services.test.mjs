@@ -5,6 +5,9 @@ import { validateWithdrawal } from "../src/services/withdrawalService.js";
 import { sanitizeCsvCell } from "../src/services/attendeeService.js";
 import { canPurchaseEvent, validateTicketQuantity } from "../src/services/checkoutValidation.js";
 import { canDeleteTicketType, toEventSlug, validateTicketType } from "../src/services/organizerValidation.js";
+import { maskBankAccount, requireReason, validateRefund } from "../src/services/adminSecurity.js";
+import { authorizeSession } from "../src/services/authorization.js";
+import { readFile } from "node:fs/promises";
 
 test("voucher tidak valid dan kedaluwarsa ditolak", () => {
   assert.equal(validateVoucher(null, 100000).valid, false);
@@ -27,4 +30,20 @@ test("slug event aman dan ticket type tervalidasi", () => {
   assert.equal(toEventSlug("Festival Kreatif Nusantara!"), "festival-kreatif-nusantara");
   assert.match(validateTicketType({ name:"VIP",price:10,quota:10,minimum:2,maximum:1,salesStart:new Date("2026-01-01"),salesEnd:new Date("2026-02-01") }), /Batas/);
   assert.equal(canDeleteTicketType(1), false);
+});
+test("admin memask rekening dan menolak refund berlebih", () => {
+  assert.equal(maskBankAccount("1234567890"), "••••••7890");
+  assert.match(validateRefund(800, 1000, 300), /melebihi/);
+  assert.match(requireReason("no"), /minimal/);
+});
+test("protected dan role-based route menolak sesi tidak sesuai", () => {
+  assert.equal(authorizeSession(null, "admin").redirect, "/login");
+  assert.equal(authorizeSession({ role:"customer",status:"active" }, "admin").redirect, "/unauthorized");
+  assert.equal(authorizeSession({ role:"admin",status:"suspended" }, "admin").redirect, "/account-suspended");
+  assert.equal(authorizeSession({ role:"admin",status:"active" }, "admin").allowed, true);
+});
+test("service role key tidak disimpan pada bundle frontend", async () => {
+  const files = ["../src/services/supabaseClient.js","../src/services/adminService.js"];
+  const source = (await Promise.all(files.map((path) => readFile(new URL(path, import.meta.url), "utf8")))).join("\n");
+  assert.doesNotMatch(source, /SUPABASE_SERVICE_ROLE_KEY/);
 });

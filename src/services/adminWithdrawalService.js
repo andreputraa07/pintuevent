@@ -1,1 +1,1 @@
-export { adminAction as reviewWithdrawal } from "./adminService";
+export { reviewWithdrawal } from "./adminService";

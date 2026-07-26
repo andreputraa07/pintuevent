@@ -1,1 +1,1 @@
-export { adminAction as reviewOrganizer } from "./adminService";
+export { reviewOrganizer } from "./adminService";

@@ -5,6 +5,13 @@ create table public.categories(
   is_active boolean not null default true,
   sort_order integer not null default 0
 );
+create or replace function public.handle_new_auth_user() returns trigger language plpgsql security definer set search_path=public as $$
+begin
+  insert into profiles(id,full_name,role,status) values(new.id,coalesce(nullif(new.raw_user_meta_data->>'full_name',''),split_part(new.email,'@',1)),'customer','active');
+  return new;
+end$$;
+drop trigger if exists create_profile_after_signup on auth.users;
+create trigger create_profile_after_signup after insert on auth.users for each row execute function public.handle_new_auth_user();
 create table public.voucher_usages(
   id uuid primary key default gen_random_uuid(),
   voucher_id uuid not null references public.vouchers,
