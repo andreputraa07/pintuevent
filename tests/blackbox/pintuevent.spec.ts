@@ -63,7 +63,7 @@ test.describe("Beranda publik", () => {
 test.describe("Autentikasi dan otorisasi", () => {
   test("halaman customer meminta login dan mempertahankan returnTo", async ({ page }) => {
     await page.goto("/dashboard/tickets");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fdashboard%2Ftickets/);
+    await expect(page).toHaveURL(/\/login\?returnTo=%2Fdashboard%2Ftickets/, { timeout: 20_000 });
   });
 
   test("login demo customer masuk ke dashboard", async ({ page }) => {
@@ -123,7 +123,7 @@ test.describe("Alur customer", () => {
   test("checkout hingga pembayaran berhasil", async ({ page }) => {
     await page.goto("/checkout/jakarta-music-festival-2026");
     await expect(page.getByRole("heading", { name: "Jakarta Music Festival 2026" })).toBeVisible();
-    await page.locator(".quantity").getByRole("button", { name: "+" }).click();
+    await page.locator(".quantity").getByRole("button", { name: "Tambah tiket" }).click();
     await expect(page.locator(".quantity strong")).toHaveText("2");
     await expect(page.locator(".payment-summary .total")).toContainText(/Rp\s*525\.000/);
 

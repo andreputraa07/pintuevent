@@ -9,7 +9,7 @@ Framework pengujian: Playwright
 | Tahap | Berhasil | Gagal | Hasil |
 | --- | ---: | ---: | --- |
 | Pengujian awal | 3 | 8 | Ditemukan masalah aplikasi dan test harness |
-| Pengujian setelah perbaikan | 11 | 0 | Lulus |
+| Pengujian setelah perbaikan | 14 | 0 | Lulus |
 | Unit/service regression test | 10 | 0 | Lulus |
 | Lint | 1 suite | 0 | Lulus |
 | Production build | 1 build | 0 | Lulus |
@@ -29,6 +29,9 @@ Framework pengujian: Playwright
 | BB-09 | Checkout | Jumlah tiket, total, lima tahap checkout, dan pembayaran berhasil | Berhasil |
 | BB-10 | Payment | Simulasi pembayaran gagal dan kedaluwarsa memberi hasil | Berhasil |
 | BB-11 | Organizer/Admin | Login, dashboard, route role, dan drawer mobile bekerja | Berhasil |
+| BB-12 | Visual desktop | Dashboard dan checkout customer presisi tanpa horizontal overflow | Berhasil |
+| BB-13 | Visual mobile | Dashboard dan tiket customer presisi tanpa horizontal overflow | Berhasil |
+| BB-14 | Visual seluruh route | 13 route customer mobile bebas overflow dan runtime error | Berhasil |
 
 ## Masalah yang ditemukan dan diperbaiki
 

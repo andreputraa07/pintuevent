@@ -73,16 +73,29 @@ export default function CustomerApp({ view, resourceId }: { view: View; resource
 
 function CustomerDashboardLayout({ view, children }: { view: View; children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const active = menu.find(([key]) => key === view)?.[0] || "overview";
+  const activeItem = menu.find(([key]) => key === view);
+  const active = activeItem?.[0] || "";
+  const contextualLabels: Partial<Record<View, string>> = {
+    ticket: "Detail Tiket",
+    order: "Detail Pesanan",
+    checkout: "Checkout",
+    payment: "Pembayaran",
+    "payment-success": "Pembayaran Berhasil",
+  };
+  const activeLabel = activeItem?.[1] || contextualLabels[view] || "Customer";
   return <div className="portal-shell">
     <aside className={`portal-sidebar ${open ? "open" : ""}`}>
       <a className="portal-brand" href="/"><Image src="/pintuevent-favicon.png" alt="" width={38} height={38} /> PintuEvent</a>
-      <button className="portal-close" onClick={() => setOpen(false)}><X /></button>
+      <button className="portal-close" aria-label="Tutup navigasi" onClick={() => setOpen(false)}><X /></button>
       <nav>{menu.map(([key, label, href, Icon]) => <a key={key} href={href} className={active === key ? "active" : ""}><Icon />{label}</a>)}</nav>
       <button className="portal-logout" onClick={async () => { await signOut(); location.href = "/"; }}><LogOut /> Keluar</button>
     </aside>
     <div className="portal-main">
-      <header className="portal-header"><button onClick={() => setOpen(true)}><Menu /></button><div><small>Customer</small><strong>André Putra</strong></div><span className="portal-avatar">AP</span></header>
+      <header className="portal-header">
+        <button aria-label="Buka navigasi" onClick={() => setOpen(true)}><Menu /></button>
+        <div className="portal-header-copy"><small>Area Customer</small><strong>{activeLabel}</strong></div>
+        <div className="portal-user"><div><small>Customer</small><strong>André Putra</strong></div><span className="portal-avatar">AP</span></div>
+      </header>
       {dataModeBanner()}
       <main className="portal-content">{children}</main>
       <nav className="portal-mobile-nav">{menu.slice(0, 4).map(([key, label, href, Icon]) => <a key={key} href={href} className={active === key ? "active" : ""}><Icon /><span>{label}</span></a>)}</nav>
@@ -117,10 +130,19 @@ function Overview({ data }: { data: Snapshot }) {
   ] as const;
   return <><PageTitle eyebrow="Dashboard Customer" title="Selamat datang, André!" description="Semua tiket, pesanan, dan event favoritmu dalam satu tempat." />
     <div className="portal-stats">{stats.map(([label, value, Icon]) => <article key={label}><Icon /><span>{label}</span><strong>{value}</strong></article>)}</div>
-    <section className="portal-panel"><div className="panel-heading"><div><small>Event terdekat</small><h2>{data.events[0].title}</h2></div><StatusBadge status="Aktif" /></div>
-      <div className="next-event"><Image src={data.events[0].image} alt="" width={180} height={110} /><div><p><CalendarDays />{data.events[0].date}</p><p><MapPin />{data.events[0].location}</p><a className="portal-button" href="/dashboard/tickets/tkt-1">Buka tiket <ChevronRight /></a></div></div>
+    <section className="portal-panel next-event-panel">
+      <div className="next-event">
+        <div className="next-event-media"><Image src={data.events[0].image} alt={`Poster ${data.events[0].title}`} fill sizes="(max-width: 600px) 100vw, 320px" /></div>
+        <div className="next-event-info">
+          <div className="event-overline"><CalendarDays /> Event terdekat</div>
+          <div className="next-event-title"><h2>{data.events[0].title}</h2><StatusBadge status="Aktif" /></div>
+          <p><CalendarDays />{data.events[0].date}</p>
+          <p><MapPin />{data.events[0].location}</p>
+          <a className="portal-button" href="/dashboard/tickets/tkt-1">Buka tiket <ChevronRight /></a>
+        </div>
+      </div>
     </section>
-    <section><div className="panel-heading"><h2>Rekomendasi event</h2><a href="/#event-pilihan">Lihat semua</a></div><EventCards events={data.events} /></section>
+    <section className="customer-section"><div className="panel-heading"><div><small>Pilihan untukmu</small><h2>Rekomendasi event</h2></div><a href="/#event-pilihan">Lihat semua <ChevronRight /></a></div><EventCards events={data.events} /></section>
   </>;
 }
 
@@ -137,7 +159,12 @@ function TicketDetail({ ticket }: { ticket: any }) {
 function OrdersPage({ data }: { data: Snapshot }) { return <><PageTitle eyebrow="Pesanan Saya" title="Riwayat transaksi" description="Status pembayaran dan tiket dari akunmu." /><div className="portal-list">{data.orders.map((order: any) => <OrderCard key={order.id} order={order} />)}</div></>; }
 function OrderCard({ order }: { order: any }) { return <article className="portal-panel order-row"><div><small>{order.number}</small><h3>{order.event.title}</h3><p>{order.createdAt} · {order.quantity} tiket</p></div><div><StatusBadge status={order.status} /><strong>{formatCurrency(order.total)}</strong><a href={`/dashboard/orders/${order.id}`}>Detail</a></div></article>; }
 function OrderDetail({ order }: { order: any }) { return <><PageTitle eyebrow={order.number} title={order.event.title} description="Rincian pesanan dan pembayaran." /><section className="portal-panel summary-lines"><p><span>Status</span><StatusBadge status={order.status} /></p><p><span>Metode</span><strong>{order.payment}</strong></p><p><span>Jumlah tiket</span><strong>{order.quantity}</strong></p><p className="total"><span>Total</span><strong>{formatCurrency(order.total)}</strong></p>{order.status === "pending" && <a className="portal-button" href={`/payment/${order.id}`}>Bayar sekarang</a>}</section></>; }
-function EventCards({ events, favorite = false }: { events: any[]; favorite?: boolean }) { return events.length ? <div className="portal-grid">{events.map((event) => <article className="portal-card" key={event.id}><div className="card-image"><Image src={event.image} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw" /><button className="favorite-mini" aria-label="Favorit"><Heart fill={favorite ? "currentColor" : "none"} /></button></div><div><small>{event.category}</small><h3>{event.title}</h3><p><CalendarDays />{event.date}</p><p><MapPin />{event.city}</p><strong>{formatCurrency(event.price)}</strong><a className="portal-button" href={`/checkout/${event.slug}`}>Beli tiket</a></div></article>)}</div> : <EmptyState title="Belum ada event" />; }
+function EventCards({ events, favorite = false }: { events: any[]; favorite?: boolean }) {
+  return events.length ? <div className="portal-grid">{events.map((event) => <article className="portal-card event-portal-card" key={event.id}>
+    <div className="card-image"><Image src={event.image} alt={`Poster ${event.title}`} fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw" /><span className="event-card-category">{event.category}</span><button className="favorite-mini" aria-label="Favorit"><Heart fill={favorite ? "currentColor" : "none"} /></button></div>
+    <div className="event-card-body"><h3>{event.title}</h3><div className="event-card-details"><p><CalendarDays />{event.date}</p><p><MapPin />{event.city}</p></div><div className="event-card-footer"><div><small>Mulai dari</small><strong>{formatCurrency(event.price)}</strong></div><a className="portal-button" href={`/checkout/${event.slug}`}>Beli tiket</a></div></div>
+  </article>)}</div> : <EmptyState title="Belum ada event" />;
+}
 function VoucherPage({ vouchers }: { vouchers: any[] }) { return <><PageTitle eyebrow="Voucher Saya" title="Hemat di event favorit" description="Voucher aktif dan riwayat penggunaan." /><div className="portal-grid">{vouchers.map((v) => <article className="voucher-card" key={v.id}><Tag /><small>Diskon hingga</small><strong>{v.value}%</strong><code>{v.code}</code><p>Min. {formatCurrency(v.minimum)} · s.d. {v.validUntil}</p></article>)}</div></>; }
 function NotificationPage({ notifications }: { notifications: any[] }) { const [items, setItems] = useState(notifications); return <><PageTitle eyebrow="Notifikasi" title="Kabar terbaru" description="Pembaruan transaksi dan event." /><button className="text-button" onClick={() => setItems(items.map((x) => ({ ...x, read: true })))}>Tandai semua dibaca</button><div className="portal-list">{items.map((n) => <article key={n.id} className={`notification-item ${n.read ? "" : "unread"}`}><Bell /><div><h3>{n.title}</h3><p>{n.body}</p><small>{n.createdAt}</small></div></article>)}</div></>; }
 
@@ -148,10 +175,23 @@ function ProfilePage({ profile }: { profile: any }) {
   return <><PageTitle eyebrow="Profil" title="Informasi pribadi" description="Email hanya dapat diubah melalui alur autentikasi aman." /><form className="portal-panel profile-form" onSubmit={handleSubmit(() => setNotice("Profil berhasil diperbarui."))}><div className="avatar-upload">{preview ? <Image src={preview} alt="Preview avatar" width={90} height={90} unoptimized /> : <span>AP</span>}<label>Ganti avatar<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => { const file = e.target.files?.[0]; const error = validateAvatar(file); if (error) setNotice(error); else if (file) setPreview(URL.createObjectURL(file)); }} /></label><small>JPG, PNG, WebP · maks. 2 MB</small></div><label>Nama lengkap<input {...register("full_name")} />{errors.full_name && <em>{String(errors.full_name.message)}</em>}</label><label>Email<input value={profile.email} disabled /></label><label>Nomor telepon<input {...register("phone")} />{errors.phone && <em>{String(errors.phone.message)}</em>}</label><button className="portal-button">Simpan perubahan</button>{notice && <p className="form-notice">{notice}</p>}</form></>;
 }
 function SettingsPage() { return <><PageTitle eyebrow="Pengaturan" title="Preferensi akun" description="Atur notifikasi dan keamanan akun." /><section className="portal-panel settings-list">{["Email transaksi", "Pengingat event", "Promo pilihan", "Notifikasi perubahan jadwal"].map((x) => <label key={x}><span>{x}</span><input type="checkbox" defaultChecked /></label>)}</section></>; }
-function CheckoutPage({ event }: { event: any }) { const [qty, setQty] = useState(1); const [step, setStep] = useState(1); const total = qty * event.price; return <><PageTitle eyebrow="Checkout aman" title={event.title} description={`Langkah ${step} dari 5`} /><div className="checkout-layout"><section className="portal-panel"><CheckoutStepper current={step} /><h2>{["Pilih tiket", "Data pemesan", "Data peserta", "Voucher", "Pembayaran"][step - 1]}</h2>{step === 1 && <TicketQuantitySelector quantity={qty} setQuantity={setQty} remaining={event.quota - event.sold} />}{step === 2 && <div className="simple-form"><input defaultValue="André Putra" /><input defaultValue="customer@pintuevent.my.id" /><input defaultValue="0812-0000-2026" /></div>}{step === 3 && <div className="simple-form">{Array.from({ length: qty }).map((_, i) => <input key={i} placeholder={`Nama peserta ${i + 1}`} />)}</div>}{step === 4 && <div className="voucher-input"><input placeholder="Kode voucher" /><button>Terapkan</button></div>}{step === 5 && <p>Simulasi pembayaran aktif. Total dihitung ulang oleh RPC pada mode Supabase.</p>}<div className="checkout-actions"><button disabled={step === 1} onClick={() => setStep(step - 1)}>Kembali</button>{step < 5 ? <button className="portal-button" onClick={() => setStep(step + 1)}>Lanjut</button> : <a className="portal-button" href="/payment/demo-order">Buat pesanan</a>}</div></section><PaymentSummary subtotal={total} /></div></>; }
-function CheckoutStepper({ current }: { current: number }) { return <div className="stepper">{[1,2,3,4,5].map((x) => <span className={x <= current ? "active" : ""} key={x}>{x}</span>)}</div>; }
-function TicketQuantitySelector({ quantity, setQuantity, remaining }: { quantity: number; setQuantity: (x: number) => void; remaining: number }) { return <div className="quantity"><button disabled={quantity <= 1} onClick={() => setQuantity(quantity - 1)}>−</button><strong>{quantity}</strong><button disabled={quantity >= Math.min(5, remaining)} onClick={() => setQuantity(quantity + 1)}>+</button><small>Sisa {remaining} tiket · maks. 5</small></div>; }
-function PaymentSummary({ subtotal }: { subtotal: number }) { const fee = Math.round(subtotal * .05); return <aside className="portal-panel payment-summary"><h2>Ringkasan</h2><p><span>Subtotal</span><strong>{formatCurrency(subtotal)}</strong></p><p><span>Biaya layanan</span><strong>{formatCurrency(fee)}</strong></p><p className="total"><span>Total</span><strong>{formatCurrency(subtotal + fee)}</strong></p></aside>; }
+function CheckoutPage({ event }: { event: any }) {
+  const [qty, setQty] = useState(1); const [step, setStep] = useState(1); const total = qty * event.price;
+  const stepTitles = ["Pilih tiket", "Data pemesan", "Data peserta", "Voucher", "Pembayaran"];
+  return <><PageTitle eyebrow="Checkout aman" title={event.title} description={`Langkah ${step} dari 5 · ${stepTitles[step - 1]}`} /><div className="checkout-layout"><section className="portal-panel checkout-panel"><CheckoutStepper current={step} /><div className="checkout-section-title"><small>Langkah {step}</small><h2>{stepTitles[step - 1]}</h2></div>
+    {step === 1 && <div className="ticket-choice"><div><span className="event-card-category">Regular</span><h3>Tiket Regular</h3><p>Akses penuh ke event · e-ticket dan QR Code</p><strong>{formatCurrency(event.price)}</strong></div><TicketQuantitySelector quantity={qty} setQuantity={setQty} remaining={event.quota - event.sold} /></div>}
+    {step === 2 && <div className="simple-form form-grid"><label>Nama lengkap<input defaultValue="André Putra" /></label><label>Email<input type="email" defaultValue="customer@pintuevent.my.id" /></label><label>Nomor telepon<input defaultValue="0812-0000-2026" /></label></div>}
+    {step === 3 && <div className="simple-form">{Array.from({ length: qty }).map((_, i) => <label key={i}>Nama peserta {i + 1}<input placeholder={`Masukkan nama peserta ${i + 1}`} /></label>)}</div>}
+    {step === 4 && <div className="voucher-section"><p>Masukkan kode voucher untuk mendapatkan potongan harga.</p><div className="voucher-input"><input aria-label="Kode voucher" placeholder="Contoh: PINTUMOMEN" /><button>Terapkan</button></div></div>}
+    {step === 5 && <div className="checkout-confirmation"><WalletCards /><div><h3>Siap melakukan pembayaran</h3><p>Simulasi pembayaran aktif. Total akan dihitung ulang oleh RPC pada mode Supabase.</p></div></div>}
+    <div className="checkout-actions"><button disabled={step === 1} onClick={() => setStep(step - 1)}>Kembali</button>{step < 5 ? <button className="portal-button" onClick={() => setStep(step + 1)}>Lanjut <ChevronRight /></button> : <a className="portal-button" href="/payment/demo-order">Buat pesanan <ChevronRight /></a>}</div></section><PaymentSummary subtotal={total} event={event} quantity={qty} /></div></>;
+}
+function CheckoutStepper({ current }: { current: number }) {
+  const labels = ["Tiket", "Pemesan", "Peserta", "Voucher", "Bayar"];
+  return <div className="stepper">{labels.map((label, index) => { const number = index + 1; return <div className={number <= current ? "active" : ""} key={label}><span>{number}</span><small>{label}</small></div>; })}</div>;
+}
+function TicketQuantitySelector({ quantity, setQuantity, remaining }: { quantity: number; setQuantity: (x: number) => void; remaining: number }) { return <div className="quantity-wrap"><div className="quantity"><button aria-label="Kurangi tiket" disabled={quantity <= 1} onClick={() => setQuantity(quantity - 1)}>−</button><strong>{quantity}</strong><button aria-label="Tambah tiket" disabled={quantity >= Math.min(5, remaining)} onClick={() => setQuantity(quantity + 1)}>+</button></div><small>Sisa {remaining} tiket · maksimal 5</small></div>; }
+function PaymentSummary({ subtotal, event, quantity }: { subtotal: number; event: any; quantity: number }) { const fee = Math.round(subtotal * .05); return <aside className="portal-panel payment-summary"><div className="payment-summary-event"><Image src={event.image} alt="" width={64} height={64} /><div><small>{quantity} tiket</small><strong>{event.title}</strong></div></div><h2>Ringkasan pembayaran</h2><p><span>Subtotal</span><strong>{formatCurrency(subtotal)}</strong></p><p><span>Biaya layanan</span><strong>{formatCurrency(fee)}</strong></p><p className="total"><span>Total</span><strong>{formatCurrency(subtotal + fee)}</strong></p><small className="secure-note"><Ticket /> Transaksi aman dan terverifikasi</small></aside>; }
 function PaymentPage({ orderId }: { orderId: string }) {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
