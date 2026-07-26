@@ -22,7 +22,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { FormEvent, useDeferredValue, useMemo, useState } from "react";
+import { FormEvent, useDeferredValue, useEffect, useMemo, useState } from "react";
 
 type EventItem = {
   id: number;
@@ -116,6 +116,7 @@ function Logo() {
 }
 
 export default function Home() {
+  const [hydrated, setHydrated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [query, setQuery] = useState("");
@@ -124,6 +125,10 @@ export default function Home() {
   const [notice, setNotice] = useState("");
   const deferredQuery = useDeferredValue(query);
   const deferredLocation = useDeferredValue(location);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setHydrated(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const visibleEvents = useMemo(() => {
     const normalizedQuery = deferredQuery.toLowerCase().trim();
@@ -159,7 +164,7 @@ export default function Home() {
   }
 
   return (
-    <main>
+    <main data-hydrated={hydrated}>
       <header className="site-header">
         <div className="container nav-wrap">
           <Logo />
@@ -183,6 +188,7 @@ export default function Home() {
             className="menu-button"
             aria-label={mobileMenuOpen ? "Tutup menu" : "Buka menu"}
             aria-expanded={mobileMenuOpen}
+            disabled={!hydrated}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X /> : <Menu />}
@@ -190,8 +196,15 @@ export default function Home() {
         </div>
         {mobileMenuOpen && (
           <nav className="mobile-menu" aria-label="Navigasi mobile">
-            {["Beranda", "Jelajahi Event", "Kategori", "Promo", "Buat Event", "Bantuan"].map((item) => (
-              <a key={item} href={`#${item.toLowerCase().replaceAll(" ", "-")}`} onClick={() => setMobileMenuOpen(false)}>
+            {[
+              ["Beranda", "#beranda"],
+              ["Jelajahi Event", "#event-pilihan"],
+              ["Kategori", "#kategori"],
+              ["Promo", "#promo"],
+              ["Buat Event", "#buat-event"],
+              ["Bantuan", "#bantuan"],
+            ].map(([item, href]) => (
+              <a key={item} href={href} onClick={() => setMobileMenuOpen(false)}>
                 {item}<ChevronRight size={18} />
               </a>
             ))}

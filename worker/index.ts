@@ -3,9 +3,9 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 
 interface Env {
-  ASSETS: Fetcher;
+  ASSETS?: Fetcher;
   DB: D1Database;
-  IMAGES: {
+  IMAGES?: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
         output(options: { format: string; quality: number }): Promise<{ response(): Response }>;
@@ -33,6 +33,7 @@ const worker = {
       url.pathname.startsWith("/assets/") ||
       url.pathname === "/pintuevent-favicon.png"
     ) {
+      if (!env.ASSETS) return fetch(request);
       const response = await env.ASSETS.fetch(request);
       if (!response.ok) return response;
       const headers = new Headers(response.headers);
@@ -48,6 +49,13 @@ const worker = {
     }
 
     if (url.pathname === "/_vinext/image") {
+      if (!env.ASSETS || !env.IMAGES) {
+        const source = url.searchParams.get("url");
+        if (!source?.startsWith("/") || source.startsWith("//")) {
+          return new Response("Sumber gambar lokal tidak valid.", { status: 400 });
+        }
+        return fetch(new Request(new URL(source, request.url), request));
+      }
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {
         fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),

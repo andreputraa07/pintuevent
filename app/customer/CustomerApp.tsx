@@ -11,11 +11,11 @@ import {
   Settings, ShoppingBag, Tag, Ticket, User, WalletCards, X,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
-import { getCustomerSnapshot } from "@/src/services/customerService";
+import { getCustomerSnapshot, simulatePayment } from "@/src/services/customerService";
 import { validateAvatar } from "@/src/services/profileService";
 import { authorizeSession, getAccessSession, signOut } from "@/src/services/authorization";
 
-const QRCode = dynamic(() => import("react-qr-code"), {
+const QRCode = dynamic(() => import("react-qr-code").then((module) => module.default), {
   loading: () => <LoadingSkeleton label="Menyiapkan QR tiket..." />,
 });
 
@@ -152,7 +152,27 @@ function CheckoutPage({ event }: { event: any }) { const [qty, setQty] = useStat
 function CheckoutStepper({ current }: { current: number }) { return <div className="stepper">{[1,2,3,4,5].map((x) => <span className={x <= current ? "active" : ""} key={x}>{x}</span>)}</div>; }
 function TicketQuantitySelector({ quantity, setQuantity, remaining }: { quantity: number; setQuantity: (x: number) => void; remaining: number }) { return <div className="quantity"><button disabled={quantity <= 1} onClick={() => setQuantity(quantity - 1)}>−</button><strong>{quantity}</strong><button disabled={quantity >= Math.min(5, remaining)} onClick={() => setQuantity(quantity + 1)}>+</button><small>Sisa {remaining} tiket · maks. 5</small></div>; }
 function PaymentSummary({ subtotal }: { subtotal: number }) { const fee = Math.round(subtotal * .05); return <aside className="portal-panel payment-summary"><h2>Ringkasan</h2><p><span>Subtotal</span><strong>{formatCurrency(subtotal)}</strong></p><p><span>Biaya layanan</span><strong>{formatCurrency(fee)}</strong></p><p className="total"><span>Total</span><strong>{formatCurrency(subtotal + fee)}</strong></p></aside>; }
-function PaymentPage({ orderId }: { orderId: string }) { return <><PageTitle eyebrow="Simulasi pembayaran" title={`Pesanan ${orderId}`} description="Hanya tersedia untuk development hingga provider pembayaran terhubung." /><section className="portal-panel payment-actions"><a className="portal-button" href={`/payment-success/${orderId}`}>Simulasikan pembayaran berhasil</a><button>Simulasikan pembayaran gagal</button><button>Simulasikan pembayaran kedaluwarsa</button></section></>; }
+function PaymentPage({ orderId }: { orderId: string }) {
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function runOutcome(outcome: "failed" | "expired") {
+    setBusy(true);
+    setNotice("");
+    try {
+      await simulatePayment(orderId, outcome);
+      setNotice(outcome === "failed"
+        ? "Simulasi pembayaran gagal berhasil diproses."
+        : "Simulasi pembayaran kedaluwarsa berhasil diproses.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Simulasi pembayaran tidak dapat diproses.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <><PageTitle eyebrow="Simulasi pembayaran" title={`Pesanan ${orderId}`} description="Hanya tersedia untuk development hingga provider pembayaran terhubung." /><section className="portal-panel payment-actions"><a className="portal-button" href={`/payment-success/${orderId}`}>Simulasikan pembayaran berhasil</a><button disabled={busy} onClick={() => runOutcome("failed")}>Simulasikan pembayaran gagal</button><button disabled={busy} onClick={() => runOutcome("expired")}>Simulasikan pembayaran kedaluwarsa</button>{notice && <p className="form-notice" role="status">{notice}</p>}</section></>;
+}
 function PaymentSuccess({ orderId }: { orderId: string }) { return <section className="success-state"><Ticket /><h1>Pembayaran berhasil</h1><p>Pesanan {orderId} telah diproses secara idempotent.</p><a className="portal-button" href="/dashboard/tickets">Lihat tiket</a></section>; }
 
 function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) { return <div className="portal-title"><small>{eyebrow}</small><h1>{title}</h1><p>{description}</p></div>; }
