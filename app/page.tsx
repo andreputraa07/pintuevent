@@ -266,12 +266,26 @@ export default function Home() {
             <a href="#event-pilihan">Lihat semua <ArrowRight size={17} /></a>
           </div>
           <div className="category-grid">
-            {categories.map(({ name, icon: Icon, total, color }) => (
-              <button key={name} className={`category-card ${color}`} onClick={() => { setActiveCategory(name); document.querySelector("#event-pilihan")?.scrollIntoView({ behavior: "smooth" }); }}>
-                <span className="category-icon"><Icon /></span>
-                <strong>{name}</strong>
-                <small>{total}</small>
-                <span className="category-arrow"><ArrowRight size={18} /></span>
+            {categories.map(({ name, icon: Icon, total, color }, index) => (
+              <button
+                key={name}
+                className={`category-card ${color}${activeCategory === name ? " is-active" : ""}`}
+                aria-pressed={activeCategory === name}
+                onClick={() => { setActiveCategory(name); document.querySelector("#event-pilihan")?.scrollIntoView({ behavior: "smooth" }); }}
+              >
+                <span className="category-orb" aria-hidden="true" />
+                <span className="category-top">
+                  <span className="category-icon"><Icon /></span>
+                  <span className="category-number">{String(index + 1).padStart(2, "0")}</span>
+                </span>
+                <span className="category-copy">
+                  <strong>{name}</strong>
+                  <small>{total} tersedia</small>
+                </span>
+                <span className="category-arrow">
+                  <span>Jelajahi</span>
+                  <ArrowRight size={17} />
+                </span>
               </button>
             ))}
           </div>
