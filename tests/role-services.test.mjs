@@ -4,6 +4,7 @@ import { validateVoucher } from "../src/services/voucherService.js";
 import { validateWithdrawal } from "../src/services/withdrawalService.js";
 import { sanitizeCsvCell } from "../src/services/attendeeService.js";
 import { canPurchaseEvent, validateTicketQuantity } from "../src/services/checkoutValidation.js";
+import { canDeleteTicketType, toEventSlug, validateTicketType } from "../src/services/organizerValidation.js";
 
 test("voucher tidak valid dan kedaluwarsa ditolak", () => {
   assert.equal(validateVoucher(null, 100000).valid, false);
@@ -21,4 +22,9 @@ test("event batal, selesai, atau habis tidak dapat dibeli", () => {
   assert.equal(canPurchaseEvent({ status: "cancelled", remaining: 10 }), false);
   assert.equal(canPurchaseEvent({ status: "published", remaining: 0 }), false);
   assert.equal(canPurchaseEvent({ status: "published", remaining: 2 }), true);
+});
+test("slug event aman dan ticket type tervalidasi", () => {
+  assert.equal(toEventSlug("Festival Kreatif Nusantara!"), "festival-kreatif-nusantara");
+  assert.match(validateTicketType({ name:"VIP",price:10,quota:10,minimum:2,maximum:1,salesStart:new Date("2026-01-01"),salesEnd:new Date("2026-02-01") }), /Batas/);
+  assert.equal(canDeleteTicketType(1), false);
 });
