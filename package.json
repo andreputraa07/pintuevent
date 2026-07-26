@@ -16,11 +16,16 @@
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@supabase/supabase-js": "^2.57.4",
     "drizzle-orm": "0.45.2",
     "lucide-react": "^0.468.0",
     "next": "16.2.6",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "react-hook-form": "^7.62.0",
+    "react-qr-code": "^2.0.18",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
