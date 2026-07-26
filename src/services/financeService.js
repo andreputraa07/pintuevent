@@ -1,1 +1,8 @@
-export async function getFinanceSummary(){return{gross:386000000,fees:19300000,refunds:0,net:366700000}}
+export async function getFinanceSummary() {
+  return {
+    gross: 386_000_000,
+    fees: 19_300_000,
+    refunds: 0,
+    net: 366_700_000,
+  };
+}

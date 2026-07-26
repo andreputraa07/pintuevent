@@ -13,22 +13,34 @@ async function useSession(page: Page, session = customerSession) {
   }, session);
 }
 
+async function expectNoMojibake(page: Page) {
+  const text = await page.locator("body").innerText();
+  expect(text).not.toMatch(/[\u00c2\u00c3\ufffd]|â(?:€|ˆ|€™|œ|“|”)/u);
+}
+
 test.describe("Beranda publik", () => {
-  test("konten utama tidak memiliki karakter encoding rusak", async ({ page }) => {
+  test("konten utama tidak memiliki karakter encoding rusak", async ({
+    page,
+  }) => {
     await page.goto("/");
     await expect(page).toHaveTitle("PintuEvent");
-    await expect(page.getByRole("heading", { name: /Temukan event/ })).toBeVisible();
-    const text = await page.locator("body").innerText();
-    expect(text).not.toMatch(/Ã|Â|â€”|âˆ’/);
+    await expect(
+      page.getByRole("heading", { name: /Temukan event/ }),
+    ).toBeVisible();
+    await expectNoMojibake(page);
   });
 
-  test("kategori, pencarian, reset, favorit, dan promo berfungsi", async ({ page }) => {
+  test("kategori, pencarian, reset, favorit, dan promo berfungsi", async ({
+    page,
+  }) => {
     await page.goto("/");
     await expect(page.locator("main")).toHaveAttribute("data-hydrated", "true");
     const categories = page.locator(".category-card");
     await expect(categories).toHaveCount(5);
 
-    const workshop = page.locator(".category-card").filter({ hasText: "Workshop" });
+    const workshop = page
+      .locator(".category-card")
+      .filter({ hasText: "Workshop" });
     await workshop.click();
     await expect(workshop).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".event-card")).toHaveCount(2);
@@ -39,12 +51,24 @@ test.describe("Beranda publik", () => {
     await page.getByRole("button", { name: "Reset pencarian" }).click();
     await expect(page.locator(".event-card")).toHaveCount(6);
 
-    const favorite = page.getByRole("button", { name: /Simpan Jakarta Music Festival/ });
+    const favorite = page.getByRole("button", {
+      name: /Simpan Jakarta Music Festival/,
+    });
     await favorite.click();
-    await expect(page.getByRole("button", { name: /Hapus Jakarta Music Festival/ })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Hapus Jakarta Music Festival/ }),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: /Salin kode promo/ }).click();
     await expect(page.getByRole("status")).toContainText("PINTUMOMEN");
+
+    const workshopCheckout = page.getByRole("link", {
+      name: "Beli tiket Workshop Melukis di Atas Kanvas",
+    });
+    await expect(workshopCheckout).toHaveAttribute(
+      "href",
+      "/checkout/workshop-melukis-kanvas",
+    );
   });
 
   test("navigasi mobile mengarah ke section yang benar", async ({ page }) => {
@@ -61,9 +85,13 @@ test.describe("Beranda publik", () => {
 });
 
 test.describe("Autentikasi dan otorisasi", () => {
-  test("halaman customer meminta login dan mempertahankan returnTo", async ({ page }) => {
+  test("halaman customer meminta login dan mempertahankan returnTo", async ({
+    page,
+  }) => {
     await page.goto("/dashboard/tickets");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fdashboard%2Ftickets/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/login\?returnTo=%2Fdashboard%2Ftickets/, {
+      timeout: 20_000,
+    });
   });
 
   test("login demo customer masuk ke dashboard", async ({ page }) => {
@@ -72,21 +100,39 @@ test.describe("Autentikasi dan otorisasi", () => {
     await expect(submit).toBeEnabled();
     await submit.click();
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByRole("heading", { name: /Selamat datang/ })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Selamat datang/ }),
+    ).toBeVisible();
   });
 
-  test("role yang salah ditolak dan akun suspended dialihkan", async ({ page }) => {
+  test("login menolak returnTo eksternal dan role tidak dikenal", async ({
+    page,
+  }) => {
+    await page.goto(
+      "/login?role=owner&returnTo=https%3A%2F%2Fexample.com%2Fphishing",
+    );
+    await expect(page.getByLabel("Role")).toHaveValue("customer");
+    await page.getByRole("button", { name: "Masuk", exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+
+  test("role yang salah ditolak dan akun suspended dialihkan", async ({
+    page,
+  }) => {
     await useSession(page);
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/unauthorized$/);
 
     const suspendedPage = await page.context().newPage();
     await suspendedPage.addInitScript(() => {
-      window.localStorage.setItem("pintuevent_session", JSON.stringify({
-        id: "demo-customer",
-        role: "customer",
-        status: "suspended",
-      }));
+      window.localStorage.setItem(
+        "pintuevent_session",
+        JSON.stringify({
+          id: "demo-customer",
+          role: "customer",
+          status: "suspended",
+        }),
+      );
     });
     await suspendedPage.goto("/dashboard");
     await expect(suspendedPage).toHaveURL(/\/account-suspended$/);
@@ -97,7 +143,9 @@ test.describe("Autentikasi dan otorisasi", () => {
 test.describe("Alur customer", () => {
   test.beforeEach(async ({ page }) => useSession(page));
 
-  test("dashboard, tiket QR, notifikasi, dan profil berfungsi", async ({ page }) => {
+  test("dashboard, tiket QR, notifikasi, dan profil berfungsi", async ({
+    page,
+  }) => {
     await page.goto("/dashboard");
     await expect(page.getByText("Tiket aktif")).toBeVisible();
     await page.getByRole("link", { name: /Buka tiket/ }).click();
@@ -122,10 +170,17 @@ test.describe("Alur customer", () => {
 
   test("checkout hingga pembayaran berhasil", async ({ page }) => {
     await page.goto("/checkout/jakarta-music-festival-2026");
-    await expect(page.getByRole("heading", { name: "Jakarta Music Festival 2026" })).toBeVisible();
-    await page.locator(".quantity").getByRole("button", { name: "Tambah tiket" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Jakarta Music Festival 2026" }),
+    ).toBeVisible();
+    await page
+      .locator(".quantity")
+      .getByRole("button", { name: "Tambah tiket" })
+      .click();
     await expect(page.locator(".quantity strong")).toHaveText("2");
-    await expect(page.locator(".payment-summary .total")).toContainText(/Rp\s*525\.000/);
+    await expect(page.locator(".payment-summary .total")).toContainText(
+      /Rp\s*525\.000/,
+    );
 
     for (let step = 1; step <= 4; step += 1) {
       await page.getByRole("button", { name: "Lanjut" }).click();
@@ -133,28 +188,58 @@ test.describe("Alur customer", () => {
     await expect(page.getByText("Simulasi pembayaran aktif")).toBeVisible();
     await page.getByRole("link", { name: "Buat pesanan" }).click();
     await expect(page).toHaveURL(/\/payment\/demo-order$/);
-    await page.getByRole("link", { name: "Simulasikan pembayaran berhasil" }).click();
-    await expect(page.getByRole("heading", { name: "Pembayaran berhasil" })).toBeVisible();
+    await page
+      .getByRole("link", { name: "Simulasikan pembayaran berhasil" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Pembayaran berhasil" }),
+    ).toBeVisible();
   });
 
-  test("simulasi pembayaran gagal dan kedaluwarsa memberikan hasil", async ({ page }) => {
+  test("simulasi pembayaran gagal dan kedaluwarsa memberikan hasil", async ({
+    page,
+  }) => {
     await page.goto("/payment/demo-order");
-    await page.getByRole("button", { name: "Simulasikan pembayaran gagal" }).click();
+    await page
+      .getByRole("button", { name: "Simulasikan pembayaran gagal" })
+      .click();
     await expect(page.getByRole("status")).toContainText("gagal");
-    await page.getByRole("button", { name: "Simulasikan pembayaran kedaluwarsa" }).click();
+    await page
+      .getByRole("button", { name: "Simulasikan pembayaran kedaluwarsa" })
+      .click();
     await expect(page.getByRole("status")).toContainText("kedaluwarsa");
+  });
+
+  test("resource customer yang tidak ada tidak memakai data fallback", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard/tickets/tidak-ada");
+    await expect(page.getByText("Tiket tidak ditemukan")).toBeVisible();
+
+    await page.goto("/dashboard/orders/tidak-ada");
+    await expect(page.getByText("Pesanan tidak ditemukan")).toBeVisible();
+
+    await page.goto("/checkout/event-tidak-ada");
+    await expect(page.getByText("Event tidak ditemukan")).toBeVisible();
   });
 });
 
 test.describe("Dashboard organizer dan admin", () => {
   for (const role of ["organizer", "admin"] as const) {
-    test(`${role} dapat login, membuka dashboard, dan memakai drawer mobile`, async ({ page }) => {
+    test(`${role} dapat login, membuka dashboard, dan memakai drawer mobile`, async ({
+      page,
+    }) => {
       await page.goto(`/login?role=${role}`);
       const submit = page.getByRole("button", { name: "Masuk", exact: true });
       await expect(submit).toBeEnabled();
       await submit.click();
       await expect(page).toHaveURL(new RegExp(`/${role}$`));
-      await expect(page.getByRole("heading", { name: role === "admin" ? "Dashboard Admin" : "Dashboard Organizer" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", {
+          name: role === "admin" ? "Dashboard Admin" : "Dashboard Organizer",
+        }),
+      ).toBeVisible();
+      await expectNoMojibake(page);
 
       await page.setViewportSize({ width: 390, height: 844 });
       await page.getByRole("button", { name: "Buka navigasi" }).click();

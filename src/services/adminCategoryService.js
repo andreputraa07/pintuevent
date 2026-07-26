@@ -1,1 +1,1 @@
-export { adminAction as updateCategory } from "./adminService";
+export { adminAction as updateCategory } from "./adminService.js";

@@ -14,8 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PintuEvent",
-  description: "A clean starting point for building your site.",
+  title: {
+    default: "PintuEvent",
+    template: "%s | PintuEvent",
+  },
+  description:
+    "Temukan, beli, dan kelola tiket event favoritmu dalam satu platform.",
   other: {
     "codex-preview": "development",
   },
@@ -35,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="id">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

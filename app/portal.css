@@ -15,7 +15,11 @@
   color: var(--portal-ink);
   display: flex;
   background:
-    radial-gradient(circle at 92% 4%, rgba(124, 58, 237, 0.06), transparent 25%),
+    radial-gradient(
+      circle at 92% 4%,
+      rgba(124, 58, 237, 0.06),
+      transparent 25%
+    ),
     var(--portal-bg);
 }
 
@@ -68,7 +72,10 @@
   color: #cfc9de;
   font-size: 13px;
   font-weight: 720;
-  transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .portal-sidebar nav a svg,
@@ -364,7 +371,11 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 60%, rgba(255, 255, 255, 0.18));
+  background: linear-gradient(
+    90deg,
+    transparent 60%,
+    rgba(255, 255, 255, 0.18)
+  );
 }
 
 .next-event-media img {
@@ -433,7 +444,9 @@
   cursor: pointer;
   background: linear-gradient(135deg, #7c3aed, #6527df);
   box-shadow: 0 9px 18px rgba(109, 46, 232, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .portal-button:hover {
@@ -538,7 +551,9 @@
 .event-portal-card {
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .event-portal-card:hover {
@@ -815,7 +830,9 @@
   border-radius: 11px;
   outline: none;
   background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .profile-form input:focus,
@@ -1233,7 +1250,9 @@
 }
 
 @keyframes pulse {
-  50% { opacity: 0.45; }
+  50% {
+    opacity: 0.45;
+  }
 }
 
 @media (max-width: 1100px) {

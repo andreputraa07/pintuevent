@@ -1,1 +1,1 @@
-export { getOrganizerDashboard as getSalesSummary } from "./organizerService";
+export { getOrganizerDashboard as getSalesSummary } from "./organizerService.js";

@@ -1,108 +1,99 @@
-# vinext-starter
+# PintuEvent
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+PintuEvent adalah platform pencarian, penjualan, dan pengelolaan tiket event.
+Project mencakup beranda publik, portal customer, dashboard organizer, dashboard
+admin, workflow Supabase, serta deployment Cloudflare melalui OpenAI Sites.
 
-## Prerequisites
+## Fitur
+
+- Katalog event, kategori, pencarian, favorit, dan promo.
+- Login demo dengan otorisasi berbasis role.
+- Portal customer untuk tiket, pesanan, voucher, notifikasi, profil, checkout,
+  dan simulasi pembayaran.
+- Dashboard organizer untuk event, penjualan, peserta, check-in, keuangan,
+  promosi, dan tim.
+- Dashboard admin untuk pengguna, verifikasi, transaksi, refund, withdrawal,
+  kategori, serta audit log.
+- Mode demo otomatis ketika environment Supabase belum dikonfigurasi.
+- RLS, RPC, storage policy, dan Edge Function pada folder `supabase/`.
+
+## Teknologi
 
 - Node.js `>=22.13.0`
-- Linux with `flock`, `curl`, and GNU `timeout`
+- React 19, Next.js 16, Vinext, dan Vite
+- TypeScript, ESLint, dan Prettier
+- Supabase Auth, Database, Storage, RPC, dan Edge Functions
+- Cloudflare Worker dan OpenAI Sites
+- Playwright untuk black-box testing
 
-## Sites Lifecycle
+## Menjalankan secara lokal
 
-The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` is intentionally a single, non-retrying `npm ci`. It refuses a concurrent install for the same project, consumes a matching image-seeded npm cache with `--prefer-offline` while retaining registry fallback for a missing cache object, otherwise downloads and verifies the complete vinext tarball recorded in `package-lock.json`, limits npm to one socket, and terminates a stalled install. `build` applies a short timeout and then validates the Sites artifact. These helpers target Linux and use GNU `timeout`; they are not native macOS scripts.
-
-Scripts that need writable project-scoped home, npm, XDG, and temporary paths use `scripts/sites-env.sh`. The `dev` and `start` scripts honor the caller's runtime environment and keep Wrangler logs inside the checkout. The generated `.sites-runtime/` directory is disposable and ignored by Git.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm install
+npm run dev
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+Perintah `dev`, `build`, `start`, `lint`, dan `test` dapat dijalankan pada
+Windows, macOS, atau Linux. Aplikasi akan memakai data demo jika variabel
+Supabase belum tersedia.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+Untuk mengaktifkan Supabase, buat `.env.local`:
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+Jangan menyimpan service-role key di environment frontend. Operasi admin yang
+memerlukannya harus dijalankan melalui Edge Function.
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+## Perintah utama
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+| Perintah                | Fungsi                                                |
+| ----------------------- | ----------------------------------------------------- |
+| `npm run dev`           | Menjalankan development server                        |
+| `npm run format`        | Memformat source, test, dan konfigurasi               |
+| `npm run format:check`  | Memastikan formatting konsisten                       |
+| `npm run lint`          | Menjalankan ESLint                                    |
+| `npm run typecheck`     | Menjalankan pemeriksaan TypeScript                    |
+| `npm run build`         | Membuat dan memvalidasi artefak production            |
+| `npm test`              | Build dan regression test service/rendering           |
+| `npm run test:blackbox` | Black-box test desktop dan mobile dengan Playwright   |
+| `npm run verify`        | Format check, lint, type-check, build, dan regression |
+| `npm run test:all`      | Seluruh verifikasi termasuk black-box test            |
+| `npm run db:generate`   | Membuat migrasi Drizzle setelah perubahan schema D1   |
 
-## Diagnostic Commands
+## Struktur project
 
-- `npm run install:ci`: perform the one bounded lockfile install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build and validate the deployable Sites artifact
-- `npm run start`: start the built Vinext application
-- `npm test`: build, validate, and verify the rendered development-preview metadata
-- `npm run validate:artifact`: recheck an existing artifact's manifest and ESM `default.fetch` export
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+```text
+app/                 route, halaman, komponen, dan stylesheet
+src/services/        akses data, autentikasi, validasi, dan workflow
+src/types/           tipe domain bersama
+supabase/migrations/ schema, RLS, RPC, dan policy
+supabase/functions/  Edge Functions
+tests/               regression dan black-box test
+worker/              entry Cloudflare Worker Vinext
+scripts/             helper build dan validasi lintas platform
+.openai/hosting.json koneksi project OpenAI Sites
+```
 
-Use build and validation commands for targeted diagnosis after a remote failure, not as part of the normal checkpoint path.
+## Autentikasi dan akses Sites
 
-The timeout defaults can be overridden for a controlled canary with `SITES_INSTALL_TIMEOUT`, `SITES_INSTALL_KILL_AFTER`, `SITES_BUILD_TIMEOUT`, and `SITES_BUILD_KILL_AFTER`. A timeout fails the command; the helpers never retry an unchanged install or build.
+Deployment Sites dapat memakai halaman **Continue with ChatGPT** sebelum
+pengunjung mencapai aplikasi. Kebijakan akses deployment dikelola oleh Sites,
+sedangkan role customer, organizer, dan admin dikelola oleh aplikasi/Supabase.
 
-## Learn More
+Helper opsional Sign in with ChatGPT tersedia di `app/chatgpt-auth.ts`. Route
+`/signin-with-chatgpt`, `/signout-with-chatgpt`, dan `/callback` dikelola oleh
+platform dan tidak boleh dibuat ulang di aplikasi.
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+## Lifecycle deployment
+
+OpenAI Sites membangun commit yang sudah didorong ke source branch dengan
+`npm run build`. Pada Linux, build tetap memakai helper bounded di
+`scripts/build-verified.sh`; pada Windows, dispatcher Node menjalankan Vinext
+dan validasi artefak yang setara.
+
+`npm run install:ci` khusus lifecycle Linux Sites dan memerlukan `flock`,
+`curl`, serta GNU `timeout`. Folder `.sites-runtime/`, `.wrangler/`, `dist/`,
+dan hasil Playwright bersifat lokal/generated dan tidak disimpan ke Git.

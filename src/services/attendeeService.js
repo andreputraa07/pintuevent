@@ -1,1 +1,5 @@
-export function sanitizeCsvCell(value){const text=String(value??"").replaceAll('"','""');return `"${/^[=+\-@]/.test(text)?"'":""}${text}"`}
+export function sanitizeCsvCell(value) {
+  const text = String(value ?? "").replaceAll('"', '""');
+  const safePrefix = /^[=+\-@]/.test(text) ? "'" : "";
+  return `"${safePrefix}${text}"`;
+}

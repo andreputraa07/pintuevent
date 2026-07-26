@@ -1,1 +1,1 @@
-export { adminAction as updateLocation } from "./adminService";
+export { adminAction as updateLocation } from "./adminService.js";

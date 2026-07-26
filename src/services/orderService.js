@@ -1,1 +1,1 @@
-export { createCheckout, simulatePayment } from "./customerService";
+export { createCheckout, simulatePayment } from "./customerService.js";

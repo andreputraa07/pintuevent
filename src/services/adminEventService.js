@@ -1,1 +1,1 @@
-export { reviewEvent } from "./adminService";
+export { reviewEvent } from "./adminService.js";

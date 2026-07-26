@@ -1,1 +1,3 @@
-export async function printTicket() { window.print(); }
+export function printTicket() {
+  window.print();
+}

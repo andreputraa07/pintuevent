@@ -1,1 +1,1 @@
-export { adminAction as updateUserStatus } from "./adminService";
+export { adminAction as updateUserStatus } from "./adminService.js";

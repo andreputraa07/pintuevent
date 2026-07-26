@@ -1,1 +1,1 @@
-export { reviewWithdrawal } from "./adminService";
+export { reviewWithdrawal } from "./adminService.js";

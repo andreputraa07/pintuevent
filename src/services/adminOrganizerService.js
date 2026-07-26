@@ -1,1 +1,1 @@
-export { reviewOrganizer } from "./adminService";
+export { reviewOrganizer } from "./adminService.js";

@@ -1,1 +1,1 @@
-export { getAdminDashboard as getPlatformReport } from "./adminService";
+export { getAdminDashboard as getPlatformReport } from "./adminService.js";

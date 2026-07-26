@@ -1,1 +1,1 @@
-export { adminAction as reconcilePayment } from "./adminService";
+export { adminAction as reconcilePayment } from "./adminService.js";

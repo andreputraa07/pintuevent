@@ -1,1 +1,1 @@
-export { getAdminDashboard as listAdminOrders } from "./adminService";
+export { getAdminDashboard as listAdminOrders } from "./adminService.js";
