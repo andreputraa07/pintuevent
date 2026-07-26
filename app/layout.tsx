@@ -19,8 +19,12 @@ export const metadata: Metadata = {
     "codex-preview": "development",
   },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: {
+      url: "/pintuevent-favicon.png",
+      type: "image/png",
+    },
+    shortcut: "/pintuevent-favicon.png",
+    apple: "/pintuevent-favicon.png",
   },
 };
 
