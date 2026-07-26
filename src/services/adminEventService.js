@@ -1,1 +1,1 @@
-export { adminAction as reviewEvent } from "./adminService";
+export { reviewEvent } from "./adminService";

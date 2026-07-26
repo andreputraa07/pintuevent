@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-html-link-for-pages, react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-html-link-for-pages */
 
 import Image from "next/image";
 import QRCode from "react-qr-code";
@@ -13,6 +13,7 @@ import {
 import { ReactNode, useEffect, useState } from "react";
 import { getCustomerSnapshot } from "@/src/services/customerService";
 import { validateAvatar } from "@/src/services/profileService";
+import { authorizeSession, getAccessSession, signOut } from "@/src/services/authorization";
 
 type Snapshot = Awaited<ReturnType<typeof getCustomerSnapshot>>;
 type View = "overview" | "tickets" | "ticket" | "orders" | "order" | "favorites" | "vouchers" | "notifications" | "profile" | "settings" | "checkout" | "payment" | "payment-success";
@@ -31,9 +32,10 @@ const menu = [
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const session = localStorage.getItem("pintuevent_session");
-    if (!session) window.location.replace(`/login?returnTo=${encodeURIComponent(location.pathname)}`);
-    else setReady(true);
+    getAccessSession().then((session) => {
+      if (!session) window.location.replace(`/login?returnTo=${encodeURIComponent(location.pathname)}`);
+      else setReady(true);
+    }).catch(() => window.location.replace("/login"));
   }, []);
   return ready ? children : <LoadingSkeleton label="Memeriksa sesi..." />;
 }
@@ -41,11 +43,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 export function RoleBasedRoute({ children }: { children: ReactNode }) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   useEffect(() => {
-    const raw = localStorage.getItem("pintuevent_session");
-    const session = raw ? JSON.parse(raw) : null;
-    if (session?.status === "suspended") window.location.replace("/account-suspended");
-    else if (session?.role !== "customer") window.location.replace("/unauthorized");
-    else setAllowed(true);
+    getAccessSession().then((session) => {
+      const access = authorizeSession(session, "customer");
+      if (!access.allowed) window.location.replace(access.redirect!);
+      else setAllowed(true);
+    }).catch(() => window.location.replace("/login"));
   }, []);
   return allowed ? children : <LoadingSkeleton label="Memeriksa hak akses..." />;
 }
@@ -73,7 +75,7 @@ function CustomerDashboardLayout({ view, children }: { view: View; children: Rea
       <a className="portal-brand" href="/"><Image src="/pintuevent-favicon.png" alt="" width={38} height={38} /> PintuEvent</a>
       <button className="portal-close" onClick={() => setOpen(false)}><X /></button>
       <nav>{menu.map(([key, label, href, Icon]) => <a key={key} href={href} className={active === key ? "active" : ""}><Icon />{label}</a>)}</nav>
-      <button className="portal-logout" onClick={() => { localStorage.removeItem("pintuevent_session"); location.href = "/"; }}><LogOut /> Keluar</button>
+      <button className="portal-logout" onClick={async () => { await signOut(); location.href = "/"; }}><LogOut /> Keluar</button>
     </aside>
     <div className="portal-main">
       <header className="portal-header"><button onClick={() => setOpen(true)}><Menu /></button><div><small>Customer</small><strong>André Putra</strong></div><span className="portal-avatar">AP</span></header>
