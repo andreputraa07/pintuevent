@@ -25,9 +25,98 @@ test.describe("Beranda publik", () => {
     await page.goto("/");
     await expect(page).toHaveTitle("PintuEvent");
     await expect(
-      page.getByRole("heading", { name: /Temukan event/ }),
+      page.getByRole("heading", {
+        name: /Temukan event yang bikin/,
+        exact: true,
+      }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Cara beli tiket di PintuEvent" }),
+    ).toBeVisible();
+    await expect(page.locator(".purchase-steps > li")).toHaveCount(5);
+    await expect(
+      page.getByRole("link", { name: "Masuk", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Buka menu akun" }),
+    ).toHaveCount(0);
     await expectNoMojibake(page);
+  });
+
+  test("menu akun menggantikan tombol masuk setelah pengguna login", async ({
+    page,
+  }) => {
+    await useSession(page);
+    await page.goto("/");
+
+    const accountButton = page.getByRole("button", {
+      name: "Buka menu akun",
+    });
+    await expect(accountButton).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.getByRole("link", { name: "Masuk", exact: true }),
+    ).toHaveCount(0);
+
+    await accountButton.click();
+    const accountMenu = page.getByRole("menu");
+    await expect(accountMenu).toBeVisible();
+    await expect(
+      accountMenu.getByRole("menuitem", { name: /Dasbor Saya/ }),
+    ).toHaveAttribute("href", "/dashboard");
+    await expect(
+      accountMenu.getByRole("menuitem", { name: /Tiket Saya/ }),
+    ).toHaveAttribute("href", "/dashboard/tickets");
+    await expect(
+      accountMenu.getByRole("menuitem", { name: /Pesanan Saya/ }),
+    ).toHaveAttribute("href", "/dashboard/orders");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "Buka menu" }).click();
+    const mobileAccount = page.locator(".mobile-account-card");
+    await expect(mobileAccount).toBeVisible();
+    await expect(
+      mobileAccount.getByRole("link", { name: /Dasbor Saya/ }),
+    ).toHaveAttribute("href", "/dashboard");
+    await expect(
+      mobileAccount.getByRole("link", { name: /Tiket Saya/ }),
+    ).toHaveAttribute("href", "/dashboard/tickets");
+
+    await mobileAccount.getByRole("button", { name: /Keluar/ }).click();
+    await page.getByRole("button", { name: "Buka menu" }).click();
+    await expect(
+      page.getByRole("link", { name: "Masuk", exact: true }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() => localStorage.getItem("pintuevent_session")),
+      )
+      .toBeNull();
+
+    const organizerPage = await page.context().newPage();
+    await organizerPage.addInitScript(() => {
+      localStorage.setItem(
+        "pintuevent_session",
+        JSON.stringify({
+          id: "demo-organizer",
+          email: "organizer@pintuevent.my.id",
+          role: "organizer",
+          status: "active",
+        }),
+      );
+    });
+    await organizerPage.setViewportSize({ width: 1280, height: 800 });
+    await organizerPage.goto("/");
+    const organizerAccountButton = organizerPage.getByRole("button", {
+      name: "Buka menu akun",
+    });
+    await expect(organizerAccountButton).toBeVisible({ timeout: 15_000 });
+    await organizerAccountButton.click();
+    await expect(
+      organizerPage
+        .getByRole("menu")
+        .getByRole("menuitem", { name: /Dasbor Saya/ }),
+    ).toHaveAttribute("href", "/organizer");
+    await organizerPage.close();
   });
 
   test("kategori, pencarian, reset, favorit, dan promo berfungsi", async ({
@@ -79,6 +168,9 @@ test.describe("Beranda publik", () => {
     await menuButton.click();
     const mobileNav = page.getByRole("navigation", { name: "Navigasi mobile" });
     await expect(mobileNav).toBeVisible();
+    await expect(
+      mobileNav.getByRole("link", { name: /Cara Beli/ }),
+    ).toHaveAttribute("href", "#cara-beli");
     await mobileNav.getByRole("link", { name: /Jelajahi Event/ }).click();
     await expect(page).toHaveURL(/#event-pilihan$/);
   });

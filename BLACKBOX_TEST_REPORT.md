@@ -17,7 +17,7 @@ Framework: Playwright
 | TypeScript type-check           | Lulus       |
 | Production build dan validation | Lulus       |
 | Regression/service test         | 12/12 lulus |
-| Black-box Playwright            | 18/18 lulus |
+| Black-box Playwright            | 19/19 lulus |
 
 ## Cakupan black-box
 
@@ -41,6 +41,7 @@ Framework: Playwright
 | BB-16 | Pembayaran            | Simulasi gagal dan kedaluwarsa memberikan hasil               | Lulus |
 | BB-17 | Resource tidak valid  | ID tiket, pesanan, dan event tidak memakai data fallback      | Lulus |
 | BB-18 | Organizer/admin       | Login, dashboard, role route, dan drawer mobile               | Lulus |
+| BB-19 | Menu akun             | Kondisi login/logout, tautan role, desktop, dan mobile        | Lulus |
 
 ## Perbaikan yang divalidasi
 
@@ -56,6 +57,10 @@ Framework: Playwright
   pada type-check.
 - Black-box visual menunggu gambar benar-benar selesai dimuat sebelum mengambil
   screenshot.
+- Header publik menampilkan menu akun sesuai sesi dan role, termasuk akses
+  dasbor, tiket, pesanan, profil, serta logout pada desktop dan mobile.
+- Panduan pembelian menjelaskan lima tahap dari pencarian event sampai tiket QR
+  tersimpan di akun.
 - Formatter dan gerbang `format`, `lint`, `typecheck`, build, regression, serta
   black-box tersedia melalui script npm.
 

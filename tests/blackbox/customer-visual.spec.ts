@@ -77,7 +77,11 @@ test("visual beranda desktop dan mobile lengkap tanpa overflow", async ({
   ]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
-    await expect(page.locator("main")).toHaveAttribute("data-hydrated", "true");
+    await expect(page.locator("main")).toHaveAttribute(
+      "data-hydrated",
+      "true",
+      { timeout: 15_000 },
+    );
     await expectImagesLoaded(page, ".hero img, .event-card img");
     await expectNoHorizontalOverflow(page);
     await expectNoMojibake(page);

@@ -5,10 +5,14 @@ import Image from "next/image";
 import {
   ArrowRight,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
   CircleHelp,
+  CircleUserRound,
   Clock3,
   Heart,
+  LayoutDashboard,
+  LogOut,
   MapPin,
   Menu,
   Music2,
@@ -27,8 +31,10 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { getAccessSession, signOut } from "@/src/services/authorization";
 
 type EventItem = {
   id: number;
@@ -40,6 +46,14 @@ type EventItem = {
   price: string;
   image: string;
   tag?: string;
+};
+
+type AccessSession = {
+  id: string;
+  email?: string;
+  full_name?: string;
+  role: "customer" | "organizer" | "admin";
+  status: "active";
 };
 
 const categories = [
@@ -117,6 +131,54 @@ const events: EventItem[] = [
   },
 ];
 
+const purchaseSteps = [
+  {
+    title: "Temukan event",
+    description:
+      "Cari berdasarkan nama, kota, tanggal, atau kategori yang kamu sukai.",
+    icon: Search,
+  },
+  {
+    title: "Masuk & pilih tiket",
+    description:
+      "Masuk ke akun, pilih jenis tiket, lalu tentukan jumlah yang dibutuhkan.",
+    icon: Ticket,
+  },
+  {
+    title: "Lengkapi data peserta",
+    description:
+      "Isi data pemesan dan nama setiap peserta dengan benar sebelum melanjutkan.",
+    icon: Users,
+  },
+  {
+    title: "Periksa & bayar",
+    description:
+      "Gunakan voucher bila tersedia, periksa ringkasan, lalu pilih pembayaran.",
+    icon: WalletCards,
+  },
+  {
+    title: "Terima tiket QR",
+    description:
+      "Setelah pembayaran berhasil, tiket digital tersimpan di menu Tiket Saya.",
+    icon: ShieldCheck,
+  },
+] as const;
+
+function isAccessSession(value: unknown): value is AccessSession {
+  if (!value || typeof value !== "object") return false;
+  const session = value as Partial<AccessSession>;
+  return (
+    typeof session.id === "string" &&
+    session.status === "active" &&
+    ["customer", "organizer", "admin"].includes(session.role ?? "")
+  );
+}
+
+function dashboardHref(role: AccessSession["role"]) {
+  if (role === "customer") return "/dashboard";
+  return `/${role}`;
+}
+
 function Logo() {
   return (
     <a className="brand" href="#beranda" aria-label="PintuEvent beranda">
@@ -139,18 +201,57 @@ function Logo() {
 
 export default function Home() {
   const [hydrated, setHydrated] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [session, setSession] = useState<AccessSession | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [notice, setNotice] = useState("");
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const deferredQuery = useDeferredValue(query);
   const deferredLocation = useDeferredValue(location);
+
   useEffect(() => {
     const frame = requestAnimationFrame(() => setHydrated(true));
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    getAccessSession()
+      .then((currentSession) => {
+        setSession(isAccessSession(currentSession) ? currentSession : null);
+      })
+      .catch(() => setSession(null))
+      .finally(() => setSessionReady(true));
+  }, []);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+
+    function closeAccountMenu(event: PointerEvent) {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target as Node)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    }
+
+    function closeAccountMenuWithKeyboard(event: KeyboardEvent) {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    }
+
+    document.addEventListener("pointerdown", closeAccountMenu);
+    document.addEventListener("keydown", closeAccountMenuWithKeyboard);
+    return () => {
+      document.removeEventListener("pointerdown", closeAccountMenu);
+      document.removeEventListener("keydown", closeAccountMenuWithKeyboard);
+    };
+  }, [accountMenuOpen]);
+
   useEffect(() => {
     if (!notice) return;
     const timeout = window.setTimeout(() => setNotice(""), 3500);
@@ -204,6 +305,31 @@ export default function Home() {
     }
   }
 
+  async function handleSignOut() {
+    await signOut();
+    setSession(null);
+    setAccountMenuOpen(false);
+    setMobileMenuOpen(false);
+    setNotice("Kamu berhasil keluar dari akun.");
+  }
+
+  const accountDashboard = session ? dashboardHref(session.role) : "/login";
+  const accountName =
+    session?.full_name || session?.email?.split("@")[0] || "Pengguna";
+  const accountInitials = accountName
+    .split(/[\s._-]+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+  const roleLabel = session
+    ? {
+        customer: "Customer",
+        organizer: "Organizer",
+        admin: "Admin",
+      }[session.role]
+    : "";
+
   return (
     <main data-hydrated={hydrated}>
       <header className="site-header">
@@ -216,16 +342,83 @@ export default function Home() {
             <a href="#event-pilihan">Jelajahi Event</a>
             <a href="#kategori">Kategori</a>
             <a href="#promo">Promo</a>
+            <a href="#cara-beli">Cara Beli</a>
             <a href="#buat-event">Buat Event</a>
-            <a href="#bantuan">Bantuan</a>
           </nav>
           <div className="nav-actions">
-            <a className="btn btn-ghost" href="/login">
-              Masuk
-            </a>
-            <a className="btn btn-primary" href="/login">
-              Daftar
-            </a>
+            {!sessionReady ? (
+              <span className="nav-auth-loading" aria-label="Memeriksa akun" />
+            ) : session ? (
+              <div className="account-menu" ref={accountMenuRef}>
+                <button
+                  className="account-trigger"
+                  type="button"
+                  aria-label="Buka menu akun"
+                  aria-haspopup="menu"
+                  aria-expanded={accountMenuOpen}
+                  onClick={() => setAccountMenuOpen((current) => !current)}
+                >
+                  <span className="account-avatar">{accountInitials}</span>
+                  <span className="account-trigger-copy">
+                    <small>{roleLabel}</small>
+                    <strong>{accountName}</strong>
+                  </span>
+                  <ChevronDown size={17} />
+                </button>
+                {accountMenuOpen && (
+                  <div className="account-dropdown" role="menu">
+                    <div className="account-identity">
+                      <span className="account-avatar large">
+                        {accountInitials}
+                      </span>
+                      <span>
+                        <strong>{accountName}</strong>
+                        <small>{session.email || roleLabel}</small>
+                      </span>
+                    </div>
+                    <a role="menuitem" href={accountDashboard}>
+                      <LayoutDashboard /> Dasbor Saya
+                    </a>
+                    {session.role === "customer" && (
+                      <>
+                        <a role="menuitem" href="/dashboard/tickets">
+                          <Ticket /> Tiket Saya
+                        </a>
+                        <a role="menuitem" href="/dashboard/orders">
+                          <WalletCards /> Pesanan Saya
+                        </a>
+                      </>
+                    )}
+                    <a
+                      role="menuitem"
+                      href={
+                        session.role === "customer"
+                          ? "/dashboard/profile"
+                          : `${accountDashboard}/${session.role === "admin" ? "settings" : "profile"}`
+                      }
+                    >
+                      <CircleUserRound /> Profil & Pengaturan
+                    </a>
+                    <button
+                      role="menuitem"
+                      type="button"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut /> Keluar
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <a className="btn btn-ghost" href="/login">
+                  Masuk
+                </a>
+                <a className="btn btn-primary" href="/login">
+                  Daftar
+                </a>
+              </>
+            )}
           </div>
           <button
             className="menu-button"
@@ -244,6 +437,7 @@ export default function Home() {
               ["Jelajahi Event", "#event-pilihan"],
               ["Kategori", "#kategori"],
               ["Promo", "#promo"],
+              ["Cara Beli", "#cara-beli"],
               ["Buat Event", "#buat-event"],
               ["Bantuan", "#bantuan"],
             ].map(([item, href]) => (
@@ -256,14 +450,38 @@ export default function Home() {
                 <ChevronRight size={18} />
               </a>
             ))}
-            <div className="mobile-actions">
-              <a className="btn btn-ghost" href="/login">
-                Masuk
-              </a>
-              <a className="btn btn-primary" href="/login">
-                Daftar Gratis
-              </a>
-            </div>
+            {sessionReady &&
+              (session ? (
+                <div className="mobile-account-card">
+                  <div className="mobile-account-identity">
+                    <span className="account-avatar">{accountInitials}</span>
+                    <span>
+                      <small>{roleLabel}</small>
+                      <strong>{accountName}</strong>
+                    </span>
+                  </div>
+                  <a href={accountDashboard}>
+                    <LayoutDashboard /> Dasbor Saya
+                  </a>
+                  {session.role === "customer" && (
+                    <a href="/dashboard/tickets">
+                      <Ticket /> Tiket Saya
+                    </a>
+                  )}
+                  <button type="button" onClick={handleSignOut}>
+                    <LogOut /> Keluar
+                  </button>
+                </div>
+              ) : (
+                <div className="mobile-actions">
+                  <a className="btn btn-ghost" href="/login">
+                    Masuk
+                  </a>
+                  <a className="btn btn-primary" href="/login">
+                    Daftar Gratis
+                  </a>
+                </div>
+              ))}
           </nav>
         )}
       </header>
@@ -392,6 +610,64 @@ export default function Home() {
               <strong>Dukungan pelanggan</strong>
               <small>Siap membantu 24/7</small>
             </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="section purchase-guide" id="cara-beli">
+        <div className="container">
+          <div className="purchase-guide-heading">
+            <div>
+              <span className="kicker">Mudah, aman, dan transparan</span>
+              <h2>Cara beli tiket di PintuEvent</h2>
+              <p>
+                Ikuti lima langkah sederhana ini. Status pesanan dan tiket
+                digitalmu selalu dapat dilihat dari menu akun.
+              </p>
+            </div>
+            <div className="purchase-guide-actions">
+              <a className="btn btn-primary" href="#event-pilihan">
+                Pilih Event <ArrowRight size={18} />
+              </a>
+              <a
+                className="btn btn-ghost"
+                href={
+                  session ? accountDashboard : "/login?returnTo=%2Fdashboard"
+                }
+              >
+                {session ? "Buka Akun Saya" : "Masuk untuk Membeli"}
+              </a>
+            </div>
+          </div>
+          <ol className="purchase-steps" aria-label="Alur pembelian tiket">
+            {purchaseSteps.map(({ title, description, icon: Icon }, index) => (
+              <li key={title}>
+                <span className="purchase-step-number">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="purchase-step-icon">
+                  <Icon />
+                </span>
+                <h3>{title}</h3>
+                <p>{description}</p>
+                {index < purchaseSteps.length - 1 && (
+                  <ChevronRight
+                    className="purchase-step-arrow"
+                    aria-hidden="true"
+                  />
+                )}
+              </li>
+            ))}
+          </ol>
+          <div className="purchase-guide-note">
+            <ShieldCheck />
+            <div>
+              <strong>Tiket tersimpan aman di akunmu</strong>
+              <p>
+                Buka <b>Akun → Tiket Saya</b> untuk melihat QR tiket. Tunjukkan
+                QR tersebut kepada petugas saat check-in.
+              </p>
+            </div>
           </div>
         </div>
       </section>
